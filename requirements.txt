@@ -1,0 +1,17 @@
+# Core AI & LLM SDKs
+google-genai>=3.3.0
+httpx>=0.27.0
+
+# Data Validation & Schema Enforcement
+pydantic>=2.14.0
+pydantic-settings>=2.6.0
+
+# Environment & Configuration
+python-dotenv>=1.0.1
+
+# Image Processing & PDF Storybook Assembly
+pillow>=11.0.0
+fpdf2>=2.9.0
+
+# Optional: Interactive Demo UI (Uncomment if building a quick web frontend)
+# streamlit>=1.40.0
