@@ -22,7 +22,9 @@ class StorybookAudioService:
         """
         Generates an MP3 narration file for a single story page.
         """
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         print(f"Generating audio narration for Page {page.page_number}...")
 
         try:

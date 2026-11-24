@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from services.llm_service import StorybookLLMService
 from services.image_service import StorybookImageService

@@ -2,7 +2,6 @@ import os
 import streamlit as st
 from dotenv import load_dotenv
 
-from schemas.storybook import StorybookOutput
 from services.llm_service import StorybookLLMService
 from services.image_service import StorybookImageService
 from services.pdf_compiler import compile_storybook_pdf
@@ -54,8 +53,8 @@ generate_btn = st.sidebar.button("✨ Generate Storybook", type="primary")
 
 # Main Content Area
 if generate_btn:
-    if not os.getenv("GEMINI_API_KEY"):
-        st.error("⚠️ GEMINI_API_KEY is missing from your .env file!")
+    if not os.getenv("OMNIROUTE_API_KEY") and not os.getenv("GEMINI_API_KEY"):
+        st.error("⚠️ Set OMNIROUTE_API_KEY or GEMINI_API_KEY in your .env file!")
     else:
         with st.status("🚀 Running Storybook Generation Pipeline...", expanded=True) as status:
             
@@ -142,11 +141,6 @@ if generate_btn:
                 if audio_p and os.path.exists(audio_p):
                     st.audio(audio_p, format="audio/mp3")
 
-                # Inside your storyboard display loop in app.py:
-                audio_p = audio_paths[idx] if idx < len(audio_paths) else None
-                if audio_p and os.path.exists(audio_p):
-                    st.audio(audio_p, format="audio/mp3")
-                    
                 st.caption(f"**Image Prompt Descriptor:** {page.image_prompt_descriptor}")
             st.divider()
 

@@ -41,7 +41,9 @@ class StorybookImageService:
             try:
                 response = requests.get(image_url, timeout=45)
                 if response.status_code == 200:
-                    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+                    output_dir = os.path.dirname(output_path)
+                    if output_dir:
+                        os.makedirs(output_dir, exist_ok=True)
                     with open(output_path, "wb") as handler:
                         handler.write(response.content)
                     print(f"Successfully saved illustration to {output_path}")
@@ -58,7 +60,9 @@ class StorybookImageService:
                 
         # --- Fallback Handling if All Retries Fail ---
         print(f"⚠️ Warning: All retries failed for page {page.page_number}. Using fallback asset.")
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        output_dir = os.path.dirname(output_path)
+        if output_dir:
+            os.makedirs(output_dir, exist_ok=True)
         
         if os.path.exists(self.fallback_image_path):
             shutil.copy(self.fallback_image_path, output_path)

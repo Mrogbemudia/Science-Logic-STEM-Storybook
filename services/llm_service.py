@@ -1,46 +1,55 @@
+import json
 import os
-from google import genai
-from google.genai import types
 from dotenv import load_dotenv
+
+try:
+    from openai import OpenAI
+except ImportError:
+    OpenAI = None
+
 from schemas.storybook import StorybookOutput
 
 load_dotenv()
 
+
 class StorybookLLMService:
     def __init__(self):
-        # Initialize the official Google GenAI client
-        self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        self.model_name = "gemini-3.8-flash"
+        if OpenAI is None:
+            raise RuntimeError(
+                "The 'openai' package is required. Install dependencies from requirements.txt."
+            )
+        base_url = os.getenv("OMNIROUTE_BASE_URL", "http://localhost:20128/v1")
+        api_key = os.getenv("OMNIROUTE_API_KEY", "omniroute-local")
+        self.model = os.getenv("OMNIROUTE_MODEL", "welcome")
+        self.client = OpenAI(base_url=base_url, api_key=api_key)
 
     def generate_storybook(self, stem_topic: str, cultural_analogy: str) -> StorybookOutput:
-        """
-        Orchestrates the Chain-of-Thought reasoning and 5-page storybook generation
-        with strict JSON schema enforcement.
-        """
-        prompt = f"""
-        You are an expert children's STEM author and cultural educator. 
-        Your task is to generate a 5-page illustrated storybook for primary school readers (ages 7-10).
+        schema_json = json.dumps(StorybookOutput.model_json_schema(), indent=2)
 
-        STEM Topic: {stem_topic}
-        Cultural Analogy: {cultural_analogy}
-
-        Requirements:
-        1. Deconstruct the STEM topic into core logic rules.
-        2. Map the rules to the cultural analogy (e.g., If yam is large and brown -> Store in barn; Else if bruised -> Sell at morning market).
-        3. Write 5 engaging pages where sentences do not exceed 12 words.
-        4. Provide detailed image prompt descriptors for each page, combining character descriptors and African art style anchors.
-        """
-
-        # Enforce structured JSON output matching the Pydantic StorybookOutput model
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=StorybookOutput,
-                temperature=0.7,
-            ),
+        system_prompt = (
+            "You are an expert children's STEM educator and storyteller. "
+            "Use Chain-of-Thought reasoning internally to map the STEM concept to the cultural analogy, "
+            "and return ONLY valid JSON matching the exact schema provided. "
+            "Every story_text sentence must have 12 words or fewer for primary school readers."
         )
 
-        # Validate and parse response text into the Pydantic model
-        return StorybookOutput.model_validate_json(response.text)
+        user_prompt = (
+            f"Create a 5-page illustrated children's storybook.\n"
+            f"STEM Topic: {stem_topic}\n"
+            f"Cultural Analogy: {cultural_analogy}\n\n"
+            f"Respond strictly with JSON conforming to this schema:\n{schema_json}"
+        )
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.7,
+        )
+
+        raw_content = response.choices[0].message.content
+        parsed_data = json.loads(raw_content)
+        return StorybookOutput.model_validate(parsed_data)
